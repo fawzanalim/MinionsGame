@@ -1,0 +1,1231 @@
+classdef Assignment < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure               matlab.ui.Figure
+        TabGroup               matlab.ui.container.TabGroup
+        MainTab                matlab.ui.container.Tab
+        GameTitle              matlab.ui.control.Label
+        GameTitleShadow        matlab.ui.control.Label
+        Creator                matlab.ui.control.Label
+        ExitButton             matlab.ui.control.Button
+        HighScoresButton       matlab.ui.control.Button
+        PlayButton             matlab.ui.control.Button
+        bg_main                matlab.ui.control.Image
+        DifficultyTab          matlab.ui.container.Tab
+        DifficultyTitle        matlab.ui.control.Label
+        DifficultyTitleShadow  matlab.ui.control.Label
+        DifficultyBtnEasy      matlab.ui.control.Button
+        DifficultyBtnNormal    matlab.ui.control.Button
+        DifficultyBtnHard      matlab.ui.control.Button
+        DifficultyBtnBack      matlab.ui.control.Button
+        bg_difficulty          matlab.ui.control.Image
+        GameTab                matlab.ui.container.Tab
+        img_wind_direction     matlab.ui.control.Image
+        Instructions           matlab.ui.control.Label
+        WindValue              matlab.ui.control.Label
+        WindLabel              matlab.ui.control.Label
+        vector                 matlab.ui.control.Image
+        snowball               matlab.ui.control.Image
+        img_lives1             matlab.ui.control.Image
+        img_lives2             matlab.ui.control.Image
+        img_lives3             matlab.ui.control.Image
+        img_lives4             matlab.ui.control.Image
+        img_lives5             matlab.ui.control.Image
+        LivesLabel             matlab.ui.control.Label
+        ScoreLabelGame         matlab.ui.control.Label
+        ScoreValueGame         matlab.ui.control.Label
+        NextScoreLabel         matlab.ui.control.Label
+        NextScoreValue         matlab.ui.control.Label
+        CurrentPosLabel        matlab.ui.control.Label
+        CurrentPosValue        matlab.ui.control.Label
+        Slider                 matlab.ui.control.Slider
+        PlayButtonGame         matlab.ui.control.Button
+        ShootingAngle          matlab.ui.control.NinetyDegreeGauge
+        QuitButton             matlab.ui.control.Button
+        bg_game                matlab.ui.control.Image
+        UIAxes                 matlab.ui.control.UIAxes
+        GameOverTab            matlab.ui.container.Tab
+        NameLabel              matlab.ui.control.Label
+        ScoreLabelScore        matlab.ui.control.Label
+        ScoreValueScore        matlab.ui.control.Label
+        NameField              matlab.ui.control.EditField
+        DoneButtonScore        matlab.ui.control.Button
+        bg_gameover            matlab.ui.control.Image
+        HighScoresTab          matlab.ui.container.Tab
+        HighScoreTitle         matlab.ui.control.Label
+        HighScoreTitleShadow   matlab.ui.control.Label
+        ScoreBtnEasy           matlab.ui.control.Button
+        ScoreBtnNormal         matlab.ui.control.Button
+        ScoreBtnHard           matlab.ui.control.Button
+        FirstName              matlab.ui.control.Label
+        FirstScore             matlab.ui.control.Label
+        SecondScore            matlab.ui.control.Label
+        SecondName             matlab.ui.control.Label
+        ThirdName              matlab.ui.control.Label
+        ThirdScore             matlab.ui.control.Label
+        FourthName             matlab.ui.control.Label
+        FourthScore            matlab.ui.control.Label
+        FifthPos               matlab.ui.control.Label
+        FifthName              matlab.ui.control.Label
+        FifthScore             matlab.ui.control.Label
+        SixthPos               matlab.ui.control.Label
+        SixthName              matlab.ui.control.Label
+        SixthScore             matlab.ui.control.Label
+        king_bob               matlab.ui.control.Image
+        stuart                 matlab.ui.control.Image
+        kevin                  matlab.ui.control.Image
+        FourthPos              matlab.ui.control.Label
+        podium                 matlab.ui.control.Image
+        SixthPosImg            matlab.ui.control.Image
+        FifthPosImg            matlab.ui.control.Image
+        FourthPosImg           matlab.ui.control.Image
+        BackButtonHighScore    matlab.ui.control.Button
+        bg_highscores          matlab.ui.control.Image
+    end
+
+    
+    properties (Access = private)
+        PlayerName = "FAW"              % Stores Plyaername for highscore, if not provided by user, then keep default value
+        Difficulty
+        Score = 0
+        HighScores 
+        HighScorers
+        HighScoreMode = 2               % Set Normal mode as default high score mode.
+        Filename = 'HighScores.txt';
+        AngleSet = 0
+        SpeedSet = 0
+        Angle = 0
+        GoalRange
+        GoalBars
+        Va  
+        Position_x
+        Position_y
+        g = 9.81
+        Lives = 5
+        
+    end
+    
+    methods (Access = private)
+
+        function newGame(app)
+            cla(app.UIAxes);
+            hold(app.UIAxes, 'on');
+            
+            app.PlayerName = "FAW";
+            app.Lives = 5;
+            app.Score = 0;
+            app.AngleSet = 0;
+            app.SpeedSet = 0;
+            app.ShootingAngle.Value = app.ShootingAngle.Limits(1);
+            app.Slider.Value = app.Slider.Limits(1);
+            app.ScoreValueGame.Text = "0";
+            updateNextScore(app);
+            app.img_lives1.Visible = 'on';
+            app.img_lives2.Visible = 'on';
+            app.img_lives3.Visible = 'on';
+            app.img_lives4.Visible = 'on';
+            app.img_lives5.Visible = 'on';
+            
+        end
+
+        function mainGame(app)
+
+            try
+                while (app.Lives > 0)                       % 1 loop represents 1 shot
+                    app.snowball.Position = [8 8 25 25];    % Sets the position of the projectile in the window
+                    app.Va = setWindVelocity(app);          % Sets wind velocity
+                    app.AngleSet = 0;                       % 0 => Angle is not set yet
+                    app.SpeedSet = 0;                       % 0 => Speed is not set yet
+                    setTarget(app);                         % Sets the position of the target
+                     
+                    setAngle(app);                          % Moves the Angle gauge up and down until Play button is clicked
+                    setSpeed(app);                          % Moves the Speed slider up and down until Play button is clicked
+                    calculate(app);                         % Calculates the x and y coordinates of the projectile
+                    shoot(app);                             % Shoots the projectile
+                    scoring(app);                           % Calculates the score after each shot
+                    updateNextScore(app);                   % Updates Next High Score & Current Position in the Game window
+                    pause(1);
+                end
+            
+            
+            app.TabGroup.SelectedTab = app.GameOverTab;
+            app.ScoreValueScore.Text = num2str(app.Score);  % Update the score in the game over window
+
+            catch
+            end
+        end
+        
+        function readAllHighScores(app)
+            try
+                file = fopen(app.Filename);
+                data = textscan(file,'%s');
+                fclose(file);
+                data = string(data{:});                                             % Reads the whole file into one string
+                app.HighScorers = transpose(reshape(data(1:18), 6, 3));             % first 18 elements converted to a 6x3 matrix
+                app.HighScores = transpose(str2double(reshape(data(19:36), 6, 3))); % last 18 elements converted to another 6x3 matrix
+            catch 
+                %If file doesnt exist, or something went wrong, set default high scores
+                app.HighScorers = [ "EAA" "EBB" "ECC" "EDD" "EEE" "EFF";
+                                    "NAA" "NBB" "NCC" "NDD" "NEE" "NFF"; 
+                                    "HAA" "HBB" "HCC" "HDD" "HEE" "HFF"];
+                app.HighScores = [49 39 29 19 9 3; 48 38 28 18 8 1; 47 37 27 17 7 2];
+            end
+        end
+        
+        
+        function Va = setWindVelocity(app)
+            if (app.Difficulty ~= 3)        % wind velocity = 0 for easy and normal mode
+                    Va = 0;
+            else
+                Va_up = 0.25;   % max wind velocity
+                Va_low = 0.1;   % min wind velocity
+
+                % set a random value between 0.1 and 0.25
+                Va = rand();
+                if (Va > Va_up)
+                    Va = mod(Va, Va_up);
+                end
+                if (Va < Va_low)
+                    Va = Va + Va_low;
+                end
+            end
+
+            app.WindValue.Text = num2str(round(Va, 2));
+
+            
+        end
+
+        function setTarget(app)
+            % Graph is 8 unit tall
+            % Target need to between 1 and 7 with 1 unit to spare from top and bottom
+            % Position on the x-axis will be fixed, 19.75
+            if (app.Difficulty == 1)
+                app.GoalRange = [4 6];      % Target is fixed in the middle for easy mode
+            else
+                app.GoalRange(1) = round(1 + (7-1) .* rand(1)); % For normal and hard, low point of target is random between 1 and 6
+                app.GoalRange(2) = app.GoalRange(1) + 2;        % high point of target is 2 unit above low point
+            end
+            try
+                delete(app.GoalBars);   %B efore changing new position of the target, try to delete old one if exists
+            catch
+            end
+            app.vector.Position = [1720 20+95*(app.GoalRange(1)) 145 194];  % Position of the image target
+            %Position of the target in the graph
+            app.GoalBars(1) = rectangle(app.UIAxes, 'Position',[19.75,app.GoalRange(2),0.75,10-app.GoalRange(2)],'FaceColor',[0 .5 .5]);
+            app.GoalBars(2) = rectangle(app.UIAxes, 'Position',[19.75,0,0.75,app.GoalRange(1)],'FaceColor',[0 .5 .5]);
+        end
+        
+        function setHighScores(app)
+            % Set High Scorers Name
+            app.FirstName.Text = app.HighScorers(app.HighScoreMode, 1);
+            app.SecondName.Text = app.HighScorers(app.HighScoreMode, 2);
+            app.ThirdName.Text = app.HighScorers(app.HighScoreMode, 3);
+            app.FourthName.Text = app.HighScorers(app.HighScoreMode, 4);
+            app.FifthName.Text = app.HighScorers(app.HighScoreMode, 5);
+            app.SixthName.Text = app.HighScorers(app.HighScoreMode, 6);
+            
+            % Set High Scores
+            app.FirstScore.Text = num2str(app.HighScores(app.HighScoreMode, 1));
+            app.SecondScore.Text = num2str(app.HighScores(app.HighScoreMode, 2));
+            app.ThirdScore.Text = num2str(app.HighScores(app.HighScoreMode, 3));
+            app.FourthScore.Text = num2str(app.HighScores(app.HighScoreMode, 4));
+            app.FifthScore.Text = num2str(app.HighScores(app.HighScoreMode, 5));
+            app.SixthScore.Text = num2str(app.HighScores(app.HighScoreMode, 6));
+
+            % Disable the button for selected mode
+            if (app.HighScoreMode == 1)
+                set(app.ScoreBtnEasy,'Enable','off');
+                set(app.ScoreBtnNormal,'Enable','on');
+                set(app.ScoreBtnHard,'Enable','on');
+            elseif (app.HighScoreMode == 2)
+                set(app.ScoreBtnEasy,'Enable','on');
+                set(app.ScoreBtnNormal,'Enable','off');
+                set(app.ScoreBtnHard,'Enable','on');
+            else
+                set(app.ScoreBtnEasy,'Enable','on');
+                set(app.ScoreBtnNormal,'Enable','on');
+                set(app.ScoreBtnHard,'Enable','off');
+            end
+        end
+        
+        
+        
+        
+        function setAngle(app)
+            app.Instructions.Text = "Click on Play button to set the angle";
+            % When up = 1, go from 0 to 90, 
+            % When up = 0, go from 90 to 0
+            up = 1; 
+            while (app.AngleSet == 0)
+                if (up == 1 && app.ShootingAngle.Value == 89)
+                    up = 0;
+                end
+    
+                if (up == 0 && app.ShootingAngle.Value == 1)
+                    up = 1;
+                end
+    
+                if (up == 1)
+                    app.ShootingAngle.Value = app.ShootingAngle.Value+1;
+                else
+                    app.ShootingAngle.Value = app.ShootingAngle.Value-1;
+                end
+                pause(0.01);    % Pause to nicely animate it
+            end
+        end
+        
+        function setSpeed(app)
+            app.Instructions.Text = "Click on Play button to set the speed";
+            % When up = 1, go from low to high, 
+            % When up = 0, go from high to low
+            up = 1;
+            while (app.SpeedSet == 0)
+                if (up == 1 && app.Slider.Value == app.Slider.Limits(2))
+                    up = 0;
+                end
+    
+                if (up == 0 && app.Slider.Value == app.Slider.Limits(1))
+                    up = 1;
+                end
+
+                if (up == 1 && app.Slider.Value+0.125 <= app.Slider.Limits(2))
+                    app.Slider.Value = app.Slider.Value+0.125;
+                elseif (up == 0 && app.Slider.Value-0.125 >= app.Slider.Limits(1))
+                    app.Slider.Value = app.Slider.Value-0.125;
+                end
+                pause(0.01);    % Pause to nicely animate it
+            end
+        end
+
+        function calculate(app)
+            
+            u = app.Slider.Value;           % Get speed from speed slider
+            theta = app.ShootingAngle.Value;% Get angle from angle gauge
+            
+            app.Position_x = linspace(0, 20, 100);  % Get 100 points from 0 to 20
+            % Calculate y-coords using projectile motion formula, considering wind velocity
+            app.Position_y = ((u.*app.Position_x.*sind(theta))./(u.*cosd(theta) + app.Va)) - ((0.5).*app.g.*(app.Position_x.^2))./((u.*cosd(theta)+app.Va).^2);
+        end
+
+        function shoot(app)
+            app.Instructions.Text = "";             % Hide instruction message during shooting animation
+            set(app.PlayButtonGame,'Enable','off'); % Disable Play button during shooting
+            
+            % Animate the projectile
+            for i = 1:length(app.Position_x)
+                plot(app.UIAxes, app.Position_x(i), app.Position_y(i), 'c*');
+                app.snowball.Position = [(8+app.Position_x(i)*1793/20) (8+app.Position_y(i)*(952)/10) 25 25];
+                pause(0.005)
+            end
+            
+            set(app.PlayButtonGame,'Enable','on')   % Enable Play button after projectile was shot
+        end
+
+        function scoring(app)
+            % If the y coordinate in between the target range
+            % When x coordinate is 20, it considered as target hit
+            % Give a small room for error margin, 0.1 is good enough iguess
+            if (app.Position_y(100)+0.1 > app.GoalRange(1) && app.Position_y(100)-0.1 < app.GoalRange(2))
+                app.Score = app.Score + 10;
+                app.ScoreValueGame.Text = num2str(app.Score);
+            else
+                % If target is missed, remove one live at a time by hiding the images
+                app.Lives = app.Lives - 1;
+                if(app.Lives == 4)
+                    app.img_lives5.Visible = 'off';
+                elseif(app.Lives == 3)
+                    app.img_lives4.Visible = 'off';
+                elseif(app.Lives == 2)
+                    app.img_lives3.Visible = 'off';
+                elseif(app.Lives == 1)
+                    app.img_lives2.Visible = 'off';
+                else
+                    app.img_lives2.Visible = 'off';
+                end
+            end
+            
+        end
+        
+        function updateNextScore(app)
+            % Find the next high score index
+            row = app.Difficulty;
+            index = find(app.Score > app.HighScores(row, 1:6), 1); 
+            
+            % Update the next score in the game
+            % If the Score is the highest, show it.
+            if(app.Score == 0 || isempty(index))
+                app.NextScoreValue.Text = num2str(app.HighScores(row, 6));
+            elseif(index == 1)
+                app.NextScoreValue.Text = num2str(app.Score);
+            else
+                app.NextScoreValue.Text = num2str(app.HighScores(row, index-1));
+
+            end
+            
+            % Update the current position in the game window
+            if(index == 1)
+                app.CurrentPosValue.Text = "1st";
+            elseif(index == 2)
+                app.CurrentPosValue.Text = "2nd";
+            elseif(index == 3)
+                app.CurrentPosValue.Text = "3rd";
+            elseif(index == 4)
+                app.CurrentPosValue.Text = "4th";
+            elseif(index == 5)
+                app.CurrentPosValue.Text = "5th";
+            elseif(index == 6)
+                app.CurrentPosValue.Text = "6th";
+            else
+                app.CurrentPosValue.Text = "7th";
+            end
+        end
+        
+        function updateHighScores(app)
+            
+            row = app.Difficulty;
+            index = find(app.Score > app.HighScores(row, 1:6), 1); %In case of same score, old score will be at the top.
+
+            if(index)
+                app.HighScores(row, 1:6) = [app.HighScores(row, 1:index-1) app.Score app.HighScores(row, index:5)];
+                app.HighScorers(row, 1:6) = [app.HighScorers(row, 1:index-1) app.PlayerName app.HighScorers(row, index:5)];
+    
+                % Update the file
+                file = fopen(app.Filename, "w");
+                for row = 1:3
+                    fprintf(file, "%s\t", app.HighScorers(row, 1:6));
+                    fprintf(file, "%s\n", "");
+                end
+                for row = 1:3
+                    fprintf(file, "%d\t", app.HighScores(row, 1:6));
+                    fprintf(file, "%s\n", "");
+                end
+                fclose(file);
+            end
+        end
+        
+        
+    end
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Code that executes after component creation
+        function startupFcn(app)
+            readAllHighScores(app);
+            
+        end
+
+        % Button pushed function: PlayButton
+        function PlayBtnMainPushed(app, event)
+            app.TabGroup.SelectedTab = app.DifficultyTab;
+            
+        end
+
+        % Button pushed function: HighScoresButton
+        function HighScoresBtnPushed(app, event)
+            app.HighScoreMode = 2;  % Represents Normal mode
+            app.TabGroup.SelectedTab = app.HighScoresTab;
+            
+            setHighScores(app);
+        end
+
+        % Button pushed function: ExitButton
+        function ExitBtnPushed(app, event)
+            close all force;
+            delete(app);
+        end
+
+        % Button pushed function: DifficultyBtnEasy
+        function DifficultyBtnEasyPushed(app, event)
+            app.Difficulty = 1;                 % 1 represents easy mode
+            app.TabGroup.SelectedTab = app.GameTab;
+            newGame(app);                       % Starts a new game by resetting all var
+            mainGame(app);                      % Runs the main game using while loop
+        end
+
+        % Button pushed function: DifficultyBtnNormal
+        function DifficultyBtnNormalPushed(app, event)
+            app.Difficulty = 2;                 % 2 represents normal mode
+            app.TabGroup.SelectedTab = app.GameTab;
+            newGame(app);                       % Starts a new game by resetting all var
+            mainGame(app);                      % Runs the main game using while loop
+        end
+
+        % Button pushed function: DifficultyBtnHard
+        function DifficultyBtnHardPushed(app, event)
+            app.Difficulty = 3;                 % 3 represents hard mode
+            app.TabGroup.SelectedTab = app.GameTab;
+            newGame(app);                       % Starts a new game by resetting all var
+            mainGame(app);                      % Runs the main game using while loop
+        end
+
+        % Button pushed function: DifficultyBtnBack
+        function BackBtnDifficultyPushed(app, event)
+            app.TabGroup.SelectedTab = app.MainTab;
+            
+        end
+
+        % Button pushed function: PlayButtonGame
+        function PlayBtnGamePushed(app, event)
+            if (app.AngleSet == 0)
+                app.AngleSet = 1;       % 1 represents true, meaning angle has been set
+            elseif (app.SpeedSet == 0)
+                app.SpeedSet = 1;       % 1 represents true, meaning speed has been set
+            end
+        end
+
+        % Button pushed function: QuitButton
+        function QuitBtnPushed(app, event)
+            app.TabGroup.SelectedTab = app.GameOverTab;
+            app.ScoreValueScore.Text = num2str(app.Score);
+        end
+
+        % Value changed function: NameField
+        function NameFieldValueChanged(app, event)
+            value = app.NameField.Value;
+            % Max length of the name is three characters
+            if (strlength(value) > 3)
+                app.NameField.Value = value(1:3);
+            end
+        end
+
+        % Button pushed function: DoneButtonScore
+        function DoneBtnGameOverPushed(app, event)
+            % Update PlayerName if they have provided a name, 
+            % if not keep default, which is FAW
+            if (~isempty(app.NameField.Value))
+                app.PlayerName = app.NameField.Value;  
+            end
+            
+            % Update high scores
+            app.HighScoreMode = app.Difficulty;
+            updateHighScores(app);
+            
+            % Set to show the high scores in the High Scores window
+            app.TabGroup.SelectedTab = app.HighScoresTab;
+            setHighScores(app);
+        end
+
+        % Button pushed function: ScoreBtnEasy
+        function ScoreBtnEasyPushed(app, event)
+            app.HighScoreMode = 1;
+            setHighScores(app);
+        end
+
+        % Button pushed function: ScoreBtnNormal
+        function ScoreBtnNormalPushed(app, event)
+            app.HighScoreMode = 2;
+            setHighScores(app);
+        end
+
+        % Button pushed function: ScoreBtnHard
+        function ScoreBtnHardPushed(app, event)
+            app.HighScoreMode = 3;
+            setHighScores(app);
+        end
+
+        % Button pushed function: BackButtonHighScore
+        function BackBtnHighScorePushed(app, event)
+            app.TabGroup.SelectedTab = app.MainTab;
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Get the file path for locating images
+            pathToMLAPP = fileparts(mfilename('fullpath'));
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [50 50 1820 980];
+            app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.Resize = 'off';
+
+            % Create TabGroup
+            app.TabGroup = uitabgroup(app.UIFigure);
+            app.TabGroup.Position = [1 2 1820 1003];
+
+            % Create MainTab
+            app.MainTab = uitab(app.TabGroup);
+            app.MainTab.Title = 'Main';
+
+            % Create bg_main
+            app.bg_main = uiimage(app.MainTab);
+            app.bg_main.ScaleMethod = 'fill';
+            app.bg_main.Position = [0 0 1820 980];
+            app.bg_main.ImageSource = fullfile(pathToMLAPP, 'images', 'bg_main2.jpg');
+
+            % Create PlayButton
+            app.PlayButton = uibutton(app.MainTab, 'push');
+            app.PlayButton.ButtonPushedFcn = createCallbackFcn(app, @PlayBtnMainPushed, true);
+            app.PlayButton.IconAlignment = 'top';
+            app.PlayButton.BackgroundColor = [0.949 0.7686 0.0314];
+            app.PlayButton.FontName = 'Comic Sans MS';
+            app.PlayButton.FontSize = 30;
+            app.PlayButton.FontWeight = 'bold';
+            app.PlayButton.FontColor = [1 1 1];
+            app.PlayButton.Position = [410 100 210 66];
+            app.PlayButton.Text = 'Play';
+
+            % Create HighScoresButton
+            app.HighScoresButton = uibutton(app.MainTab, 'push');
+            app.HighScoresButton.ButtonPushedFcn = createCallbackFcn(app, @HighScoresBtnPushed, true);
+            app.HighScoresButton.BackgroundColor = [0.949 0.7686 0.0314];
+            app.HighScoresButton.FontName = 'Comic Sans MS';
+            app.HighScoresButton.FontSize = 30;
+            app.HighScoresButton.FontWeight = 'bold';
+            app.HighScoresButton.FontColor = [1 1 1];
+            app.HighScoresButton.Position = [810 100 200 67];
+            app.HighScoresButton.Text = 'High Scores';
+
+            % Create ExitButton
+            app.ExitButton = uibutton(app.MainTab, 'push');
+            app.ExitButton.ButtonPushedFcn = createCallbackFcn(app, @ExitBtnPushed, true);
+            app.ExitButton.BackgroundColor = [0.949 0.7686 0.0314];
+            app.ExitButton.FontName = 'Comic Sans MS';
+            app.ExitButton.FontSize = 30;
+            app.ExitButton.FontWeight = 'bold';
+            app.ExitButton.FontColor = [1 1 1];
+            app.ExitButton.Position = [1210 100 200 66];
+            app.ExitButton.Text = 'Exit';
+
+            % Create Creator
+            app.Creator = uilabel(app.MainTab);
+            app.Creator.HorizontalAlignment = 'center';
+            app.Creator.FontName = 'Comic Sans MS';
+            app.Creator.FontSize = 20;
+            app.Creator.Position = [1111 802 101 27];
+            app.Creator.Text = 'by Fawzan';
+
+            % Create GameTitleShadow
+            app.GameTitleShadow = uilabel(app.MainTab);
+            app.GameTitleShadow.HorizontalAlignment = 'center';
+            app.GameTitleShadow.FontName = 'Comic Sans MS';
+            app.GameTitleShadow.FontSize = 80;
+            app.GameTitleShadow.Position = [641 823 588 108];
+            app.GameTitleShadow.Text = 'Minion Shooter';
+
+            % Create GameTitle
+            app.GameTitle = uilabel(app.MainTab);
+            app.GameTitle.HorizontalAlignment = 'center';
+            app.GameTitle.FontName = 'Comic Sans MS';
+            app.GameTitle.FontSize = 80;
+            app.GameTitle.FontColor = [0.949 0.7686 0.0314];
+            app.GameTitle.Position = [635 825 588 108];
+            app.GameTitle.Text = 'Minion Shooter';
+
+            % Create DifficultyTab
+            app.DifficultyTab = uitab(app.TabGroup);
+            app.DifficultyTab.Title = 'Difficulty';
+
+            % Create bg_difficulty
+            app.bg_difficulty = uiimage(app.DifficultyTab);
+            app.bg_difficulty.ScaleMethod = 'fill';
+            app.bg_difficulty.Position = [0 0 1820 980];
+            app.bg_difficulty.ImageSource = fullfile(pathToMLAPP, 'images', 'bg_main2.jpg');
+
+            % Create DifficultyBtnBack
+            app.DifficultyBtnBack = uibutton(app.DifficultyTab, 'push');
+            app.DifficultyBtnBack.ButtonPushedFcn = createCallbackFcn(app, @BackBtnDifficultyPushed, true);
+            app.DifficultyBtnBack.BackgroundColor = [0.949 0.7686 0.0314];
+            app.DifficultyBtnBack.FontName = 'Comic Sans MS';
+            app.DifficultyBtnBack.FontSize = 30;
+            app.DifficultyBtnBack.FontWeight = 'bold';
+            app.DifficultyBtnBack.FontColor = [1 1 1];
+            app.DifficultyBtnBack.Position = [811 7 200 66];
+            app.DifficultyBtnBack.Text = 'Back';
+
+            % Create DifficultyBtnHard
+            app.DifficultyBtnHard = uibutton(app.DifficultyTab, 'push');
+            app.DifficultyBtnHard.ButtonPushedFcn = createCallbackFcn(app, @DifficultyBtnHardPushed, true);
+            app.DifficultyBtnHard.BackgroundColor = [0.949 0.7686 0.0314];
+            app.DifficultyBtnHard.FontName = 'Comic Sans MS';
+            app.DifficultyBtnHard.FontSize = 30;
+            app.DifficultyBtnHard.FontWeight = 'bold';
+            app.DifficultyBtnHard.FontColor = [1 1 1];
+            app.DifficultyBtnHard.Tooltip = {'Random Target with Random velocity left to right'};
+            app.DifficultyBtnHard.Position = [1210 100 200 66];
+            app.DifficultyBtnHard.Text = 'Hard';
+
+            % Create DifficultyBtnNormal
+            app.DifficultyBtnNormal = uibutton(app.DifficultyTab, 'push');
+            app.DifficultyBtnNormal.ButtonPushedFcn = createCallbackFcn(app, @DifficultyBtnNormalPushed, true);
+            app.DifficultyBtnNormal.BackgroundColor = [0.949 0.7686 0.0314];
+            app.DifficultyBtnNormal.FontName = 'Comic Sans MS';
+            app.DifficultyBtnNormal.FontSize = 30;
+            app.DifficultyBtnNormal.FontWeight = 'bold';
+            app.DifficultyBtnNormal.FontColor = [1 1 1];
+            app.DifficultyBtnNormal.Tooltip = {'Random Target'};
+            app.DifficultyBtnNormal.Position = [810 100 200 67];
+            app.DifficultyBtnNormal.Text = 'Normal';
+
+            % Create DifficultyBtnEasy
+            app.DifficultyBtnEasy = uibutton(app.DifficultyTab, 'push');
+            app.DifficultyBtnEasy.ButtonPushedFcn = createCallbackFcn(app, @DifficultyBtnEasyPushed, true);
+            app.DifficultyBtnEasy.BackgroundColor = [0.949 0.7686 0.0314];
+            app.DifficultyBtnEasy.FontName = 'Comic Sans MS';
+            app.DifficultyBtnEasy.FontSize = 30;
+            app.DifficultyBtnEasy.FontWeight = 'bold';
+            app.DifficultyBtnEasy.FontColor = [1 1 1];
+            app.DifficultyBtnEasy.Tooltip = {'Fixed Target'};
+            app.DifficultyBtnEasy.Position = [410 100 210 66];
+            app.DifficultyBtnEasy.Text = 'Easy';
+
+            % Create DifficultyTitleShadow
+            app.DifficultyTitleShadow = uilabel(app.DifficultyTab);
+            app.DifficultyTitleShadow.HorizontalAlignment = 'center';
+            app.DifficultyTitleShadow.FontName = 'Comic Sans MS';
+            app.DifficultyTitleShadow.FontSize = 80;
+            app.DifficultyTitleShadow.Position = [577 823 674 108];
+            app.DifficultyTitleShadow.Text = 'Choose Difficulty';
+
+            % Create DifficultyTitle
+            app.DifficultyTitle = uilabel(app.DifficultyTab);
+            app.DifficultyTitle.HorizontalAlignment = 'center';
+            app.DifficultyTitle.FontName = 'Comic Sans MS';
+            app.DifficultyTitle.FontSize = 80;
+            app.DifficultyTitle.FontColor = [0.949 0.7686 0.0314];
+            app.DifficultyTitle.Position = [574 827 674 108];
+            app.DifficultyTitle.Text = 'Choose Difficulty';
+
+            % Create GameTab
+            app.GameTab = uitab(app.TabGroup);
+            app.GameTab.Title = 'Game';
+
+            % Create UIAxes
+            app.UIAxes = uiaxes(app.GameTab);
+            app.UIAxes.XLim = [0 20];
+            app.UIAxes.YLim = [0 10];
+            app.UIAxes.XTickLabel = {'0'; '2'; '4'; '6'; '8'; '10'; '12'; '14'; '16'; '18'; '20'};
+            app.UIAxes.Position = [1 1 1818 978];
+
+            % Create bg_game
+            app.bg_game = uiimage(app.GameTab);
+            app.bg_game.ScaleMethod = 'fill';
+            app.bg_game.Position = [0 0 1820 980];
+            app.bg_game.ImageSource = fullfile(pathToMLAPP, 'images', 'bg_game.jpg');
+
+            % Create QuitButton
+            app.QuitButton = uibutton(app.GameTab, 'push');
+            app.QuitButton.ButtonPushedFcn = createCallbackFcn(app, @QuitBtnPushed, true);
+            app.QuitButton.BackgroundColor = [0.949 0.7686 0.0314];
+            app.QuitButton.FontName = 'Comic Sans MS';
+            app.QuitButton.FontSize = 30;
+            app.QuitButton.FontWeight = 'bold';
+            app.QuitButton.FontColor = [1 1 1];
+            app.QuitButton.Position = [32 894 178 67];
+            app.QuitButton.Text = 'Quit';
+
+            % Create ShootingAngle
+            app.ShootingAngle = uigauge(app.GameTab, 'ninetydegree');
+            app.ShootingAngle.Limits = [0 90];
+            app.ShootingAngle.Orientation = 'northeast';
+            app.ShootingAngle.ScaleDirection = 'counterclockwise';
+            app.ShootingAngle.Position = [10 10 89 89];
+
+            % Create PlayButtonGame
+            app.PlayButtonGame = uibutton(app.GameTab, 'push');
+            app.PlayButtonGame.ButtonPushedFcn = createCallbackFcn(app, @PlayBtnGamePushed, true);
+            app.PlayButtonGame.BackgroundColor = [0.949 0.7686 0.0314];
+            app.PlayButtonGame.FontName = 'Comic Sans MS';
+            app.PlayButtonGame.FontSize = 30;
+            app.PlayButtonGame.FontWeight = 'bold';
+            app.PlayButtonGame.FontColor = [1 1 1];
+            app.PlayButtonGame.Position = [810 8 178 67];
+            app.PlayButtonGame.Text = 'Play';
+
+            % Create Slider
+            app.Slider = uislider(app.GameTab);
+            app.Slider.Limits = [10 20];
+            app.Slider.FontColor = [1 1 1];
+            app.Slider.Position = [175 80 202 3];
+            app.Slider.Value = 15;
+
+            % Create CurrentPosValue
+            app.CurrentPosValue = uilabel(app.GameTab);
+            app.CurrentPosValue.FontName = 'Comic Sans MS';
+            app.CurrentPosValue.FontSize = 30;
+            app.CurrentPosValue.FontWeight = 'bold';
+            app.CurrentPosValue.FontColor = [0.949 0.7686 0.0314];
+            app.CurrentPosValue.Position = [1393 921 88 40];
+            app.CurrentPosValue.Text = '7th';
+
+            % Create CurrentPosLabel
+            app.CurrentPosLabel = uilabel(app.GameTab);
+            app.CurrentPosLabel.FontName = 'Comic Sans MS';
+            app.CurrentPosLabel.FontSize = 30;
+            app.CurrentPosLabel.FontWeight = 'bold';
+            app.CurrentPosLabel.FontColor = [0.949 0.7686 0.0314];
+            app.CurrentPosLabel.Position = [1143 920 252 40];
+            app.CurrentPosLabel.Text = 'Current Position:';
+
+            % Create NextScoreValue
+            app.NextScoreValue = uilabel(app.GameTab);
+            app.NextScoreValue.FontName = 'Comic Sans MS';
+            app.NextScoreValue.FontSize = 30;
+            app.NextScoreValue.FontWeight = 'bold';
+            app.NextScoreValue.FontColor = [0.949 0.7686 0.0314];
+            app.NextScoreValue.Position = [1057 921 105 40];
+            app.NextScoreValue.Text = '0';
+
+            % Create NextScoreLabel
+            app.NextScoreLabel = uilabel(app.GameTab);
+            app.NextScoreLabel.FontName = 'Comic Sans MS';
+            app.NextScoreLabel.FontSize = 30;
+            app.NextScoreLabel.FontWeight = 'bold';
+            app.NextScoreLabel.FontColor = [0.949 0.7686 0.0314];
+            app.NextScoreLabel.Position = [790 920 268 40];
+            app.NextScoreLabel.Text = 'Next High Score:';
+
+            % Create ScoreValueGame
+            app.ScoreValueGame = uilabel(app.GameTab);
+            app.ScoreValueGame.FontName = 'Comic Sans MS';
+            app.ScoreValueGame.FontSize = 30;
+            app.ScoreValueGame.FontWeight = 'bold';
+            app.ScoreValueGame.FontColor = [0.949 0.7686 0.0314];
+            app.ScoreValueGame.Position = [703 922 101 40];
+            app.ScoreValueGame.Text = '0';
+
+            % Create ScoreLabelGame
+            app.ScoreLabelGame = uilabel(app.GameTab);
+            app.ScoreLabelGame.FontName = 'Comic Sans MS';
+            app.ScoreLabelGame.FontSize = 30;
+            app.ScoreLabelGame.FontWeight = 'bold';
+            app.ScoreLabelGame.FontColor = [0.949 0.7686 0.0314];
+            app.ScoreLabelGame.Position = [602 920 102 40];
+            app.ScoreLabelGame.Text = 'Score:';
+
+            % Create LivesLabel
+            app.LivesLabel = uilabel(app.GameTab);
+            app.LivesLabel.FontName = 'Comic Sans MS';
+            app.LivesLabel.FontSize = 30;
+            app.LivesLabel.FontWeight = 'bold';
+            app.LivesLabel.FontColor = [0.949 0.7686 0.0314];
+            app.LivesLabel.Position = [288 922 89 40];
+            app.LivesLabel.Text = 'Lives:';
+
+            % Create img_lives5
+            app.img_lives5 = uiimage(app.GameTab);
+            app.img_lives5.Position = [507 923 33 30];
+            app.img_lives5.ImageSource = fullfile(pathToMLAPP, 'images', 'toppng.com-minions-png-transparent-image-minion-stuart-623x989.png');
+
+            % Create img_lives4
+            app.img_lives4 = uiimage(app.GameTab);
+            app.img_lives4.Position = [473 923 33 30];
+            app.img_lives4.ImageSource = fullfile(pathToMLAPP, 'images', 'toppng.com-minions-png-transparent-image-minion-stuart-623x989.png');
+
+            % Create img_lives3
+            app.img_lives3 = uiimage(app.GameTab);
+            app.img_lives3.Position = [441 923 33 30];
+            app.img_lives3.ImageSource = fullfile(pathToMLAPP, 'images', 'toppng.com-minions-png-transparent-image-minion-stuart-623x989.png');
+
+            % Create img_lives2
+            app.img_lives2 = uiimage(app.GameTab);
+            app.img_lives2.Position = [409 923 33 30];
+            app.img_lives2.ImageSource = fullfile(pathToMLAPP, 'images', 'toppng.com-minions-png-transparent-image-minion-stuart-623x989.png');
+
+            % Create img_lives1
+            app.img_lives1 = uiimage(app.GameTab);
+            app.img_lives1.Position = [376 923 33 30];
+            app.img_lives1.ImageSource = fullfile(pathToMLAPP, 'images', 'toppng.com-minions-png-transparent-image-minion-stuart-623x989.png');
+
+            % Create snowball
+            app.snowball = uiimage(app.GameTab);
+            app.snowball.Position = [8 8 25 25];
+            app.snowball.ImageSource = fullfile(pathToMLAPP, 'images', 'snowball1.PNG');
+
+            % Create vector
+            app.vector = uiimage(app.GameTab);
+            app.vector.Position = [1720 400 145 194];
+            app.vector.ImageSource = fullfile(pathToMLAPP, 'images', 'bratt.png');
+
+            % Create WindLabel
+            app.WindLabel = uilabel(app.GameTab);
+            app.WindLabel.FontName = 'Comic Sans MS';
+            app.WindLabel.FontSize = 30;
+            app.WindLabel.FontWeight = 'bold';
+            app.WindLabel.FontColor = [0.949 0.7686 0.0314];
+            app.WindLabel.Position = [1500 920 104 40];
+            app.WindLabel.Text = 'Wind: ';
+
+            % Create WindValue
+            app.WindValue = uilabel(app.GameTab);
+            app.WindValue.FontName = 'Comic Sans MS';
+            app.WindValue.FontSize = 30;
+            app.WindValue.FontWeight = 'bold';
+            app.WindValue.FontColor = [0.949 0.7686 0.0314];
+            app.WindValue.Position = [1597 921 143 40];
+            app.WindValue.Text = '0';
+
+            % Create Instructions
+            app.Instructions = uilabel(app.GameTab);
+            app.Instructions.HorizontalAlignment = 'center';
+            app.Instructions.FontName = 'Comic Sans MS';
+            app.Instructions.FontSize = 30;
+            app.Instructions.FontWeight = 'bold';
+            app.Instructions.FontColor = [0.949 0.7686 0.0314];
+            app.Instructions.Position = [459 802 882 66];
+            app.Instructions.Text = 'Instructions';
+
+            % Create img_wind_direction
+            app.img_wind_direction = uiimage(app.GameTab);
+            app.img_wind_direction.Position = [1500 852 119 100];
+            app.img_wind_direction.ImageSource = fullfile(pathToMLAPP, 'images', 'arrow.png');
+
+            % Create GameOverTab
+            app.GameOverTab = uitab(app.TabGroup);
+            app.GameOverTab.Title = 'GameOver';
+
+            % Create bg_gameover
+            app.bg_gameover = uiimage(app.GameOverTab);
+            app.bg_gameover.ScaleMethod = 'fill';
+            app.bg_gameover.Position = [0 0 1820 980];
+            app.bg_gameover.ImageSource = fullfile(pathToMLAPP, 'images', 'bg_gameover.jpg');
+
+            % Create DoneButtonScore
+            app.DoneButtonScore = uibutton(app.GameOverTab, 'push');
+            app.DoneButtonScore.ButtonPushedFcn = createCallbackFcn(app, @DoneBtnGameOverPushed, true);
+            app.DoneButtonScore.BackgroundColor = [0.949 0.7686 0.0314];
+            app.DoneButtonScore.FontName = 'Comic Sans MS';
+            app.DoneButtonScore.FontSize = 30;
+            app.DoneButtonScore.FontWeight = 'bold';
+            app.DoneButtonScore.FontColor = [1 1 1];
+            app.DoneButtonScore.Position = [1519 137 178 67];
+            app.DoneButtonScore.Text = 'Done';
+
+            % Create NameField
+            app.NameField = uieditfield(app.GameOverTab, 'text');
+            app.NameField.ValueChangedFcn = createCallbackFcn(app, @NameFieldValueChanged, true);
+            app.NameField.HorizontalAlignment = 'center';
+            app.NameField.FontName = 'Comic Sans MS';
+            app.NameField.FontSize = 75;
+            app.NameField.FontWeight = 'bold';
+            app.NameField.FontColor = [1 1 1];
+            app.NameField.BackgroundColor = [0.949 0.7686 0.0314];
+            app.NameField.Tooltip = {'Maximum three character'};
+            app.NameField.Placeholder = 'Enter Name';
+            app.NameField.Position = [1327 391 451 97];
+
+            % Create ScoreValueScore
+            app.ScoreValueScore = uilabel(app.GameOverTab);
+            app.ScoreValueScore.HorizontalAlignment = 'center';
+            app.ScoreValueScore.FontName = 'Comic Sans MS';
+            app.ScoreValueScore.FontSize = 75;
+            app.ScoreValueScore.FontWeight = 'bold';
+            app.ScoreValueScore.Position = [75 385 215 102];
+            app.ScoreValueScore.Text = '0';
+
+            % Create ScoreLabelScore
+            app.ScoreLabelScore = uilabel(app.GameOverTab);
+            app.ScoreLabelScore.FontName = 'Comic Sans MS';
+            app.ScoreLabelScore.FontSize = 75;
+            app.ScoreLabelScore.FontWeight = 'bold';
+            app.ScoreLabelScore.Position = [75 482 214 102];
+            app.ScoreLabelScore.Text = 'Score';
+
+            % Create NameLabel
+            app.NameLabel = uilabel(app.GameOverTab);
+            app.NameLabel.HorizontalAlignment = 'center';
+            app.NameLabel.FontName = 'Comic Sans MS';
+            app.NameLabel.FontSize = 75;
+            app.NameLabel.FontWeight = 'bold';
+            app.NameLabel.FontColor = [1 1 1];
+            app.NameLabel.Position = [1419 484 267 102];
+            app.NameLabel.Text = 'Name';
+
+            % Create HighScoresTab
+            app.HighScoresTab = uitab(app.TabGroup);
+            app.HighScoresTab.Title = 'High Scores';
+
+            % Create bg_highscores
+            app.bg_highscores = uiimage(app.HighScoresTab);
+            app.bg_highscores.ScaleMethod = 'fill';
+            app.bg_highscores.Position = [0 0 1820 980];
+            app.bg_highscores.ImageSource = fullfile(pathToMLAPP, 'images', 'bg_highscores3dark2.png');
+
+            % Create BackButtonHighScore
+            app.BackButtonHighScore = uibutton(app.HighScoresTab, 'push');
+            app.BackButtonHighScore.ButtonPushedFcn = createCallbackFcn(app, @BackBtnHighScorePushed, true);
+            app.BackButtonHighScore.BackgroundColor = [0.949 0.7686 0.0314];
+            app.BackButtonHighScore.FontName = 'Comic Sans MS';
+            app.BackButtonHighScore.FontSize = 30;
+            app.BackButtonHighScore.FontWeight = 'bold';
+            app.BackButtonHighScore.FontColor = [1 1 1];
+            app.BackButtonHighScore.Position = [1562 54 178 67];
+            app.BackButtonHighScore.Text = 'Back';
+
+            % Create FourthPosImg
+            app.FourthPosImg = uiimage(app.HighScoresTab);
+            app.FourthPosImg.Position = [493 8 280 178];
+            app.FourthPosImg.ImageSource = fullfile(pathToMLAPP, 'images', 'cardboard1.png');
+
+            % Create FifthPosImg
+            app.FifthPosImg = uiimage(app.HighScoresTab);
+            app.FifthPosImg.Position = [741 32 343 133];
+            app.FifthPosImg.ImageSource = fullfile(pathToMLAPP, 'images', 'cardboard2.png');
+
+            % Create SixthPosImg
+            app.SixthPosImg = uiimage(app.HighScoresTab);
+            app.SixthPosImg.Position = [1036 13 266 190];
+            app.SixthPosImg.ImageSource = fullfile(pathToMLAPP, 'images', 'cardboard1.png');
+
+            % Create podium
+            app.podium = uiimage(app.HighScoresTab);
+            app.podium.Position = [658 192 530 300];
+            app.podium.ImageSource = fullfile(pathToMLAPP, 'images', 'podium.png');
+
+            % Create FourthPos
+            app.FourthPos = uilabel(app.HighScoresTab);
+            app.FourthPos.HorizontalAlignment = 'center';
+            app.FourthPos.FontName = 'Comic Sans MS';
+            app.FourthPos.FontSize = 40;
+            app.FourthPos.FontWeight = 'bold';
+            app.FourthPos.FontColor = [1 1 1];
+            app.FourthPos.Position = [531 72 93 54];
+            app.FourthPos.Text = '4th';
+
+            % Create kevin
+            app.kevin = uiimage(app.HighScoresTab);
+            app.kevin.Position = [618 337 316 233];
+            app.kevin.ImageSource = fullfile(pathToMLAPP, 'images', 'kevin.png');
+
+            % Create stuart
+            app.stuart = uiimage(app.HighScoresTab);
+            app.stuart.Position = [933 314 248 358];
+            app.stuart.ImageSource = fullfile(pathToMLAPP, 'images', 'stuart.png');
+
+            % Create king_bob
+            app.king_bob = uiimage(app.HighScoresTab);
+            app.king_bob.Position = [800 452 223 305];
+            app.king_bob.ImageSource = fullfile(pathToMLAPP, 'images', 'king_bob.png');
+
+            % Create SixthScore
+            app.SixthScore = uilabel(app.HighScoresTab);
+            app.SixthScore.HorizontalAlignment = 'center';
+            app.SixthScore.FontName = 'Comic Sans MS';
+            app.SixthScore.FontSize = 40;
+            app.SixthScore.FontWeight = 'bold';
+            app.SixthScore.FontColor = [1 1 1];
+            app.SixthScore.Position = [1163 55 122 54];
+            app.SixthScore.Text = '999';
+
+            % Create SixthName
+            app.SixthName = uilabel(app.HighScoresTab);
+            app.SixthName.HorizontalAlignment = 'center';
+            app.SixthName.FontName = 'Comic Sans MS';
+            app.SixthName.FontSize = 40;
+            app.SixthName.FontWeight = 'bold';
+            app.SixthName.FontColor = [1 1 1];
+            app.SixthName.Position = [1163 112 122 54];
+            app.SixthName.Text = 'FFF';
+
+            % Create SixthPos
+            app.SixthPos = uilabel(app.HighScoresTab);
+            app.SixthPos.HorizontalAlignment = 'center';
+            app.SixthPos.FontName = 'Comic Sans MS';
+            app.SixthPos.FontSize = 40;
+            app.SixthPos.FontWeight = 'bold';
+            app.SixthPos.FontColor = [1 1 1];
+            app.SixthPos.Position = [1082 75 93 54];
+            app.SixthPos.Text = '6th';
+
+            % Create FifthScore
+            app.FifthScore = uilabel(app.HighScoresTab);
+            app.FifthScore.HorizontalAlignment = 'center';
+            app.FifthScore.FontName = 'Comic Sans MS';
+            app.FifthScore.FontSize = 40;
+            app.FifthScore.FontWeight = 'bold';
+            app.FifthScore.FontColor = [1 1 1];
+            app.FifthScore.Position = [881 40 129 54];
+            app.FifthScore.Text = '999';
+
+            % Create FifthName
+            app.FifthName = uilabel(app.HighScoresTab);
+            app.FifthName.HorizontalAlignment = 'center';
+            app.FifthName.FontName = 'Comic Sans MS';
+            app.FifthName.FontSize = 40;
+            app.FifthName.FontWeight = 'bold';
+            app.FifthName.FontColor = [1 1 1];
+            app.FifthName.Position = [881 97 129 54];
+            app.FifthName.Text = 'EEE';
+
+            % Create FifthPos
+            app.FifthPos = uilabel(app.HighScoresTab);
+            app.FifthPos.HorizontalAlignment = 'center';
+            app.FifthPos.FontName = 'Comic Sans MS';
+            app.FifthPos.FontSize = 40;
+            app.FifthPos.FontWeight = 'bold';
+            app.FifthPos.FontColor = [1 1 1];
+            app.FifthPos.Position = [801 60 93 54];
+            app.FifthPos.Text = '5th';
+
+            % Create FourthScore
+            app.FourthScore = uilabel(app.HighScoresTab);
+            app.FourthScore.HorizontalAlignment = 'center';
+            app.FourthScore.FontName = 'Comic Sans MS';
+            app.FourthScore.FontSize = 40;
+            app.FourthScore.FontWeight = 'bold';
+            app.FourthScore.FontColor = [1 1 1];
+            app.FourthScore.Position = [623 54 130 54];
+            app.FourthScore.Text = '999';
+
+            % Create FourthName
+            app.FourthName = uilabel(app.HighScoresTab);
+            app.FourthName.HorizontalAlignment = 'center';
+            app.FourthName.FontName = 'Comic Sans MS';
+            app.FourthName.FontSize = 40;
+            app.FourthName.FontWeight = 'bold';
+            app.FourthName.FontColor = [1 1 1];
+            app.FourthName.Position = [623 111 130 54];
+            app.FourthName.Text = 'DDD';
+
+            % Create ThirdScore
+            app.ThirdScore = uilabel(app.HighScoresTab);
+            app.ThirdScore.HorizontalAlignment = 'center';
+            app.ThirdScore.FontName = 'Comic Sans MS';
+            app.ThirdScore.FontSize = 40;
+            app.ThirdScore.FontWeight = 'bold';
+            app.ThirdScore.FontColor = [1 1 1];
+            app.ThirdScore.Position = [695 238 127 54];
+            app.ThirdScore.Text = '999';
+
+            % Create ThirdName
+            app.ThirdName = uilabel(app.HighScoresTab);
+            app.ThirdName.HorizontalAlignment = 'center';
+            app.ThirdName.FontName = 'Comic Sans MS';
+            app.ThirdName.FontSize = 40;
+            app.ThirdName.FontWeight = 'bold';
+            app.ThirdName.FontColor = [1 1 1];
+            app.ThirdName.Position = [694 281 127 54];
+            app.ThirdName.Text = 'CCC';
+
+            % Create SecondName
+            app.SecondName = uilabel(app.HighScoresTab);
+            app.SecondName.HorizontalAlignment = 'center';
+            app.SecondName.FontName = 'Comic Sans MS';
+            app.SecondName.FontSize = 40;
+            app.SecondName.FontWeight = 'bold';
+            app.SecondName.FontColor = [1 1 1];
+            app.SecondName.Position = [1021 333 123 54];
+            app.SecondName.Text = 'BBB';
+
+            % Create SecondScore
+            app.SecondScore = uilabel(app.HighScoresTab);
+            app.SecondScore.HorizontalAlignment = 'center';
+            app.SecondScore.FontName = 'Comic Sans MS';
+            app.SecondScore.FontSize = 40;
+            app.SecondScore.FontWeight = 'bold';
+            app.SecondScore.FontColor = [1 1 1];
+            app.SecondScore.Position = [1022 281 123 54];
+            app.SecondScore.Text = '999';
+
+            % Create FirstScore
+            app.FirstScore = uilabel(app.HighScoresTab);
+            app.FirstScore.HorizontalAlignment = 'center';
+            app.FirstScore.FontName = 'Comic Sans MS';
+            app.FirstScore.FontSize = 40;
+            app.FirstScore.FontWeight = 'bold';
+            app.FirstScore.FontColor = [1 1 1];
+            app.FirstScore.Position = [822 348 161 54];
+            app.FirstScore.Text = '999';
+
+            % Create FirstName
+            app.FirstName = uilabel(app.HighScoresTab);
+            app.FirstName.HorizontalAlignment = 'center';
+            app.FirstName.FontName = 'Comic Sans MS';
+            app.FirstName.FontSize = 40;
+            app.FirstName.FontWeight = 'bold';
+            app.FirstName.FontColor = [1 1 1];
+            app.FirstName.Position = [821 400 161 54];
+            app.FirstName.Text = 'AAA';
+
+            % Create ScoreBtnHard
+            app.ScoreBtnHard = uibutton(app.HighScoresTab, 'push');
+            app.ScoreBtnHard.ButtonPushedFcn = createCallbackFcn(app, @ScoreBtnHardPushed, true);
+            app.ScoreBtnHard.BackgroundColor = [0.949 0.7686 0.0314];
+            app.ScoreBtnHard.FontName = 'Comic Sans MS';
+            app.ScoreBtnHard.FontSize = 30;
+            app.ScoreBtnHard.FontWeight = 'bold';
+            app.ScoreBtnHard.FontColor = [1 1 1];
+            app.ScoreBtnHard.Position = [1210 775 200 66];
+            app.ScoreBtnHard.Text = 'Hard';
+
+            % Create ScoreBtnNormal
+            app.ScoreBtnNormal = uibutton(app.HighScoresTab, 'push');
+            app.ScoreBtnNormal.ButtonPushedFcn = createCallbackFcn(app, @ScoreBtnNormalPushed, true);
+            app.ScoreBtnNormal.BackgroundColor = [0.949 0.7686 0.0314];
+            app.ScoreBtnNormal.FontName = 'Comic Sans MS';
+            app.ScoreBtnNormal.FontSize = 30;
+            app.ScoreBtnNormal.FontWeight = 'bold';
+            app.ScoreBtnNormal.FontColor = [1 1 1];
+            app.ScoreBtnNormal.Position = [810 775 200 67];
+            app.ScoreBtnNormal.Text = 'Normal';
+
+            % Create ScoreBtnEasy
+            app.ScoreBtnEasy = uibutton(app.HighScoresTab, 'push');
+            app.ScoreBtnEasy.ButtonPushedFcn = createCallbackFcn(app, @ScoreBtnEasyPushed, true);
+            app.ScoreBtnEasy.BackgroundColor = [0.949 0.7686 0.0314];
+            app.ScoreBtnEasy.FontName = 'Comic Sans MS';
+            app.ScoreBtnEasy.FontSize = 30;
+            app.ScoreBtnEasy.FontWeight = 'bold';
+            app.ScoreBtnEasy.FontColor = [1 1 1];
+            app.ScoreBtnEasy.Position = [410 775 210 66];
+            app.ScoreBtnEasy.Text = 'Easy';
+
+            % Create HighScoreTitleShadow
+            app.HighScoreTitleShadow = uilabel(app.HighScoresTab);
+            app.HighScoreTitleShadow.HorizontalAlignment = 'center';
+            app.HighScoreTitleShadow.FontName = 'Comic Sans MS';
+            app.HighScoreTitleShadow.FontSize = 70;
+            app.HighScoreTitleShadow.FontWeight = 'bold';
+            app.HighScoreTitleShadow.Position = [703 841 422 120];
+            app.HighScoreTitleShadow.Text = 'High Scores';
+
+            % Create HighScoreTitle
+            app.HighScoreTitle = uilabel(app.HighScoresTab);
+            app.HighScoreTitle.HorizontalAlignment = 'center';
+            app.HighScoreTitle.FontName = 'Comic Sans MS';
+            app.HighScoreTitle.FontSize = 70;
+            app.HighScoreTitle.FontWeight = 'bold';
+            app.HighScoreTitle.FontColor = [0.949 0.7686 0.0314];
+            app.HighScoreTitle.Position = [699 844 422 120];
+            app.HighScoreTitle.Text = 'High Scores';
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = Assignment
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @startupFcn)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end
